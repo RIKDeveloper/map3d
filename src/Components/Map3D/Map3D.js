@@ -26,6 +26,24 @@ const Map3D = () => {
       }
     `
 
+    const Input = styled.input`
+      width: 15vw;
+      border: none;
+      background-color: #B0B7EE;
+      &:focus{
+        border: none;
+        outline: none;
+      }
+    `
+
+    const InputContainer = styled.div`
+      background-color: #B0B7EE;
+      padding: 5px 10px;
+      border-radius: 25px;
+      height: 2vh;
+      display: inline-block;
+    `
+
     const Btn1 = styled.div`
       position: absolute;
       top: 4vmax;
@@ -54,11 +72,12 @@ const Map3D = () => {
     `
 
     const mount = useRef(null)
+    const [subj, setSubj] = useState("Субъект не выбран")
 
     let map = new THREE.Mesh();
     const light1 = new THREE.PointLight(0xffcf48, 0.5, 1.5);
     const sphere = new THREE.SphereGeometry(0.05, 16, 8);
-    const widthCanvas = (window.innerWidth / 2) + window.innerWidth / 14;
+    const widthCanvas = (window.innerWidth / 2);
     const heightCanvas = (window.innerHeight / 1.5);
     let mouse = new THREE.Vector2();
     let time = 12;
@@ -74,7 +93,16 @@ const Map3D = () => {
     spotLight1.target.updateMatrixWorld();
     let timeUTC = 18
     const colorsMap = [];
+    let subjList = {};
 
+    fetch("/Code2Sub.json").then(res=>res.json()).then(json=>{
+        for (const index in json){
+            if(subjList[index])
+                subjList[index].name = json[index]
+            else
+                subjList[index] = {"name": json[index]}
+        }
+    })
 
     useEffect(() => {
         const scene = new THREE.Scene();
@@ -167,32 +195,35 @@ const Map3D = () => {
         camera.position.set(1.1, 0, 0);
         light.position.set(3, 0, 0)
 
-        loaderGltf.load("models/map.gltf", (gltf) => {
+        loaderGltf.load("models/map1.glb", (gltf) => {
             map = gltf.scene;
 
             for (const group of map.children) {
                 const scale = Math.floor(Math.random() * 10) / 10 + 1;
-                // const color = new THREE.Color(
-                //         `rgb(${145 - (scale * 10)}, ${170 - (scale * 12)}, ${194 - (scale * 10)})`
-                // );
                 const color = new THREE.Color(
                     `rgb(${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)})`
                 );
-
-                // `rgb(${145 - (scale * 10)}, ${151 - (scale * 10)}, ${194 - (scale * 10)})`
-                // i.material.color.setRGB(Math.floor(Math.random() * 255),Math.floor(Math.random() * 255),Math.floor(Math.random() * 255))
+                // group.scale.setX(scale)
                 for (const i of group.children)
                     if (i instanceof THREE.Mesh) {
-                        console.log(i)
 
                         i.material = new THREE.MeshPhongMaterial({
                             color: color,
                             dithering: true,
                         })
-                        // i.material.time = Math.floor(Math.random() * 100);
                         i.castShadow = true;
                         i.receiveShadow = true;
-                        // i.scale.setX(scale)
+                        if(subjList[group.name]){
+                            subjList[group.name].color = i.material.color.getHexString();
+                            subjList[group.name].scale = scale;
+                            subjList[group.name].defaultScale = i.scale.x
+                        }
+                        else{
+                            subjList[group.name] = {color: i.material.color.getHexString(), scale, defaultScale: i.scale.x};
+                        }
+                        i.scale.setX(subjList[group.name].defaultScale * subjList[group.name].scale)
+
+
                         colorsMap[group.name] = i.material.color.getHexString();
 
                     } else if (i instanceof THREE.Object3D) {
@@ -213,7 +244,7 @@ const Map3D = () => {
 
             scene.add(map);
 
-            console.log(gltf)
+            console.log("gltf", gltf)
         })
 
         camera.lookAt(0, 0, 0)
@@ -221,10 +252,10 @@ const Map3D = () => {
 
         const raycaster = new THREE.Raycaster();
 
-        document.addEventListener('mousemove', (e) => {
-            mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
-            mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
-        })
+        // document.addEventListener('mousemove', (e) => {
+        //     mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
+        //     mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
+        // })
 
         const CheckChildren = (children_list, intersect_obj) => {
             for (const children of children_list) {
@@ -249,9 +280,9 @@ const Map3D = () => {
 
                 for (const item of map.children) {
                     if (intersects.length > 0) {
-                        if (item == intersects[0].object || CheckChildren(item.children, intersects[0].object)) {
+                        if (item === intersects[0].object || CheckChildren(item.children, intersects[0].object)) {
+                            setSubj(subjList[item.name].name)
                             for (const subject of item.children) {
-                                console.log(item)
                                 subject.material.color.setHex(0x5267f4)
                             }
                             continue;
@@ -259,7 +290,7 @@ const Map3D = () => {
                         }
                     }
                     for (const subject of item.children) {
-                        subject.material.color.setHex("0x" + colorsMap[item.name])
+                        subject.material.color.setHex("0x" + subjList[item.name].color)
                     }
 
                     // item.material.color.setHex("0x" + colorsMap[item.name])
@@ -333,10 +364,24 @@ const Map3D = () => {
 
     return (
         <>
-            <div style={{height: "100%", minHeight: '65vh', flex: '2 2 300px'}} ref={mount} onMouseMove={(e) => {
-                mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
-                mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
-            }}></div>
+            <div style={{display:"flex", height: "100%"}}>
+                <div style={{height: "100%", minHeight: '65vh', flex: '2 2 300px', width: "50%"}} ref={mount} onMouseMove={(e) => {
+                    mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
+                    mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
+                    mouse.type = "move";
+                }} onClick={(e) => {
+                    mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
+                    mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
+                    mouse.type = "click";
+                }}/>
+                <div style={{background: "#F7F7FA", borderRadius:"10px", width: "30%", marginTop: "20px", marginRight: "20px"}}>
+                    <div style={{fontSize:"20px", padding:"20px"}}>{subj}</div>
+                    <InputContainer>
+                        <Input></Input>
+                    </InputContainer>
+                </div>
+            </div>
+
             <div style={{
                 position: "absolute",
                 top: "4vmax",
