@@ -30,7 +30,8 @@ const Map3D = () => {
       width: 15vw;
       border: none;
       background-color: #B0B7EE;
-      &:focus{
+
+      &:focus {
         border: none;
         outline: none;
       }
@@ -40,8 +41,8 @@ const Map3D = () => {
       background-color: #B0B7EE;
       padding: 5px 10px;
       border-radius: 25px;
-      height: 2vh;
       display: inline-block;
+      margin: 0 20px;
     `
 
     const Btn1 = styled.div`
@@ -71,15 +72,28 @@ const Map3D = () => {
       z-index: 2;
     `
 
-    const mount = useRef(null)
-    const [subj, setSubj] = useState("Субъект не выбран")
+    const Wrap = styled.div`
+      display: flex;
+      justify-content: center;
+    `
 
-    let map = new THREE.Mesh();
+    const Btn2 = styled.div`
+      padding: 5px 10px;
+      background-color: #B0B7EE;
+      border-radius: 25px;
+      color: #fff;
+      cursor: pointer;
+    `
+
+    const mount = useRef(null)
+    const [select, setSelect] = useState({})
+    let selectSubj = {}
+    let map = null;
     const light1 = new THREE.PointLight(0xffcf48, 0.5, 1.5);
     const sphere = new THREE.SphereGeometry(0.05, 16, 8);
     const widthCanvas = (window.innerWidth / 2);
     const heightCanvas = (window.innerHeight / 1.5);
-    let mouse = new THREE.Vector2();
+    let mouse = {position: new THREE.Vector2()};
     let time = 12;
 
     let spotLight1 = new THREE.SpotLight(0xFFCC33, 5, 7);
@@ -95,14 +109,15 @@ const Map3D = () => {
     const colorsMap = [];
     let subjList = {};
 
-    fetch("/Code2Sub.json").then(res=>res.json()).then(json=>{
-        for (const index in json){
-            if(subjList[index])
+    fetch("/Code2Sub.json").then(res => res.json()).then(json => {
+        for (const index in json) {
+            if (subjList[index])
                 subjList[index].name = json[index]
             else
                 subjList[index] = {"name": json[index]}
         }
     })
+
 
     useEffect(() => {
         const scene = new THREE.Scene();
@@ -122,44 +137,6 @@ const Map3D = () => {
 
         scene.add(light);
 
-        let geoLine, curveObject;
-
-        // geoLine = new THREE.BufferGeometry().setFromPoints([
-        //     new THREE.Vector3(0, 0, 0),
-        //     new THREE.Vector3(10, 0, 0)]);
-        //
-        // curveObject = new THREE.Line(geoLine, new THREE.LineBasicMaterial({color: 0xff0000}));
-        //
-        // scene.add(curveObject)
-
-        // geoLine = new THREE.BufferGeometry().setFromPoints([
-        //     new THREE.Vector3(0, 0, 1.2),
-        //     new THREE.Vector3(0, 10, 1.2)]);
-        //
-        // curveObject = new THREE.Line(geoLine, new THREE.LineBasicMaterial({color: 0x00ff00}));
-        // //
-        // scene.add(curveObject)
-        // //
-        // geoLine = new THREE.BufferGeometry().setFromPoints([
-        //     new THREE.Vector3(0, -0.7, -1.205),
-        //     new THREE.Vector3(0, 10, -1.205)]);
-        //
-        // curveObject = new THREE.Line(geoLine, new THREE.LineBasicMaterial({color: 0x00ff00}));
-        // //
-        // scene.add(curveObject)
-
-        // geoLine = new THREE.BufferGeometry().setFromPoints([
-        //     new THREE.Vector3(0, 0, 0),
-        //     new THREE.Vector3(0, 0, 10)]);
-        //
-        // curveObject = new THREE.Line(geoLine, new THREE.LineBasicMaterial({color: 0x0000ff}));
-        //
-        // scene.add(curveObject)
-
-        // light1.add(new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({color: 0xffcf48})));
-        // light1.position.set(1, 0, -0.2);
-        // scene.add(light1);
-
         let spotLight = new THREE.SpotLight(0xffffff, 0.3);
         spotLight.position.set(4, -2, 0);
         spotLight.angle = Math.PI / 4;
@@ -176,11 +153,12 @@ const Map3D = () => {
         spotLight.rotation.set(0, 20, 0)
         scene.add(spotLight);
 
-        let lightHelper = new THREE.SpotLightHelper(spotLight);
-        scene.add(lightHelper);
 
-        let shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
-        scene.add(shadowCameraHelper);
+        // let lightHelper = new THREE.SpotLightHelper(spotLight);
+        // scene.add(lightHelper);
+
+        // let shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+        // scene.add(shadowCameraHelper);
 
 
         scene.add(spotLight1);
@@ -213,13 +191,16 @@ const Map3D = () => {
                         })
                         i.castShadow = true;
                         i.receiveShadow = true;
-                        if(subjList[group.name]){
+                        if (subjList[group.name]) {
                             subjList[group.name].color = i.material.color.getHexString();
                             subjList[group.name].scale = scale;
                             subjList[group.name].defaultScale = i.scale.x
-                        }
-                        else{
-                            subjList[group.name] = {color: i.material.color.getHexString(), scale, defaultScale: i.scale.x};
+                        } else {
+                            subjList[group.name] = {
+                                color: i.material.color.getHexString(),
+                                scale,
+                                defaultScale: i.scale.x
+                            };
                         }
                         i.scale.setX(subjList[group.name].defaultScale * subjList[group.name].scale)
 
@@ -233,7 +214,7 @@ const Map3D = () => {
 
             }
 
-            console.log(colorsMap)
+            console.log(colorsMap, subjList)
 
             map.rotateY(Math.PI)
             map.rotateZ(-0.15)
@@ -243,8 +224,6 @@ const Map3D = () => {
             // map.receiveShadow = true;
 
             scene.add(map);
-
-            console.log("gltf", gltf)
         })
 
         camera.lookAt(0, 0, 0)
@@ -252,10 +231,18 @@ const Map3D = () => {
 
         const raycaster = new THREE.Raycaster();
 
-        // document.addEventListener('mousemove', (e) => {
-        //     mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
-        //     mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
-        // })
+        document.querySelector(".map").addEventListener('click', (e) => {
+            // console.log("select", selectSubj)
+            mouse.position.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
+            mouse.position.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
+            mouse.action = "click"
+        })
+
+        document.querySelector(".map").addEventListener('mousemove', (e) => {
+            mouse.position.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
+            mouse.position.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
+            mouse.action = "focus"
+        })
 
         const CheckChildren = (children_list, intersect_obj) => {
             for (const children of children_list) {
@@ -274,26 +261,46 @@ const Map3D = () => {
             // light1.position.setZ(1.21 * Math.cos((2 * Math.PI) / 17000 * nowTime))
             // light1.position.setX(1.21 * Math.sin((2 * Math.PI) / 17000 * nowTime));
 
-            if (map && mouse.x !== 0) {
-                raycaster.setFromCamera(mouse, camera);
+            if (map && mouse.position.x !== 0) {
+                raycaster.setFromCamera(mouse.position, camera);
                 const intersects = raycaster.intersectObjects(map.children);
-
                 for (const item of map.children) {
                     if (intersects.length > 0) {
                         if (item === intersects[0].object || CheckChildren(item.children, intersects[0].object)) {
-                            setSubj(subjList[item.name].name)
-                            for (const subject of item.children) {
-                                subject.material.color.setHex(0x5267f4)
+                            if (mouse.action == "click") {
+
+                                // setSubj(subjList[item.name].name)
+                                // setScale(subjList[item.name].defaultScale * subjList[item.name].scale)
+                                setSelect({subjCode: item.name, scale: subjList[item.name].scale, name:subjList[item.name].name})
+                                selectSubj = {subjCode: item.name, scale: subjList[item.name].scale, name:subjList[item.name].name}
+                                console.log("click", item.name, selectSubj)
+                                for (const subject of item.children) {
+                                    subject.material.color.setHex(0xff0000)
+                                }
+                            } else if (mouse.action == "focus") {
+                                // setSubj(subjList[item.name].name)
+                                // setScale(subjList[item.name].defaultScale * subjList[item.name].scale)
+                                if(item.name !== selectSubj.subjCode){
+                                    for (const subject of item.children) {
+                                        subject.material.color.setHex(0x5267f4)
+                                    }
+                                }
+
+
                             }
                             continue;
+                        }
 
+                        if(item.name !== selectSubj.subjCode){
+                            for (const subject of item.children) {
+                                subject.material.color.setHex("0x" + subjList[item.name].color)
+                            }
+                        } else{
+                            for (const subject of item.children) {
+                                subject.material.color.setHex(0xff0000)
+                            }
                         }
                     }
-                    for (const subject of item.children) {
-                        subject.material.color.setHex("0x" + subjList[item.name].color)
-                    }
-
-                    // item.material.color.setHex("0x" + colorsMap[item.name])
                 }
             }
 
@@ -333,6 +340,19 @@ const Map3D = () => {
     }
     // Math.cos(((j + 1 - this.count) + 0.5) )
 
+    const changeScale = ()=>{
+        console.log("change scale func start", map)
+        for (const group of map.children){
+            console.log(group.name == select.subjCode, group.name, select.subjCode)
+            if (group.name == select.subjCode){
+                console.log("change scale", group.name, select.subjCode)
+                for (const item of group.children){
+                    item.scale.setX(subjList[group.name].defaultScale * subjList[group.name].scale)
+                }
+            }
+        }
+    }
+
     const onVisibleSun = () => {
         if (light1.children.length === 0) {
             light1.add(new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({color: 0xffcf48})));
@@ -364,21 +384,37 @@ const Map3D = () => {
 
     return (
         <>
-            <div style={{display:"flex", height: "100%"}}>
-                <div style={{height: "100%", minHeight: '65vh', flex: '2 2 300px', width: "50%"}} ref={mount} onMouseMove={(e) => {
-                    mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
-                    mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
-                    mouse.type = "move";
-                }} onClick={(e) => {
-                    mouse.x = ((e.clientX - e.target.offsetLeft) / widthCanvas) * 2 - 1;
-                    mouse.y = -((e.clientY - e.target.offsetTop) / heightCanvas) * 2 + 1;
-                    mouse.type = "click";
-                }}/>
-                <div style={{background: "#F7F7FA", borderRadius:"10px", width: "30%", marginTop: "20px", marginRight: "20px"}}>
-                    <div style={{fontSize:"20px", padding:"20px"}}>{subj}</div>
-                    <InputContainer>
-                        <Input></Input>
-                    </InputContainer>
+            <div style={{display: "flex", height: "100%"}}>
+                <div className={"map"} style={{height: "100%", minHeight: '65vh', flex: '2 2 300px', width: "50%"}}
+                     ref={mount}/>
+                <div style={{
+                    background: "#F7F7FA",
+                    borderRadius: "10px",
+                    width: "30%",
+                    marginTop: "20px",
+                    marginRight: "20px"
+                }}>
+                    <div style={{fontSize: "20px", padding: "20px"}}>{select.name}</div>
+                    <Wrap>
+                        <Btn2>
+                            Отменить
+                        </Btn2>
+                        <InputContainer>
+                            <Input defaultValue={select.scale} onChange={(e)=>{
+                                console.log(e)
+                                e.value = e.target.value
+                                // setSelect({subjCode: select.subjCode, scale: e.target.value, name:select.name})
+                            }}></Input>
+                        </InputContainer>
+                        <Btn2 onClick={(e)=>{
+                            console.log("btn", e);
+                            subjList[select.subjCode].scale = e.target.parentElement.querySelector("input").value;
+                            changeScale()
+                        }}>
+                            Применить
+                        </Btn2>
+                    </Wrap>
+
                 </div>
             </div>
 
