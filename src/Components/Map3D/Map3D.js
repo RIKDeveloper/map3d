@@ -87,6 +87,7 @@ const Map3D = () => {
 
     const mount = useRef(null)
     const [select, setSelect] = useState({})
+    const [subjState, setSubjState] = useState({changed: false})
     let selectSubj = {}
     let map = null;
     const light1 = new THREE.PointLight(0xffcf48, 0.5, 1.5);
@@ -107,7 +108,7 @@ const Map3D = () => {
     spotLight1.target.updateMatrixWorld();
     let timeUTC = 18
     const colorsMap = [];
-    let subjList = {};
+    let subjList = {changed: false};
 
     fetch("/Code2Sub.json").then(res => res.json()).then(json => {
         for (const index in json) {
@@ -116,6 +117,7 @@ const Map3D = () => {
             else
                 subjList[index] = {"name": json[index]}
         }
+        setSubjState(subjList)
     })
 
 
@@ -212,6 +214,7 @@ const Map3D = () => {
                     }
 
 
+                setSubjState(subjList)
             }
 
             console.log(colorsMap, subjList)
@@ -253,6 +256,8 @@ const Map3D = () => {
             return false
         }
 
+
+
         const animate = function () {
             requestAnimationFrame(animate);
 
@@ -260,6 +265,19 @@ const Map3D = () => {
             // // light1.position.setZ(Math.tan(( 3    * Math.PI) / 17000 * nowTime))
             // light1.position.setZ(1.21 * Math.cos((2 * Math.PI) / 17000 * nowTime))
             // light1.position.setX(1.21 * Math.sin((2 * Math.PI) / 17000 * nowTime));
+
+            if (subjState["changed"] !== false){
+                console.log("changed", subjState.changed)
+
+                for (let item of map){
+                    if(Object.keys(subjState).indexOf(item.name) >= 0){
+                        item.scale.setX(subjState[item.name].defaultScale * subjState[item.name].scale)
+                    }
+                }
+
+                subjList.changed = false
+                // setSubjState(subjList)
+            }
 
             if (map && mouse.position.x !== 0) {
                 raycaster.setFromCamera(mouse.position, camera);
@@ -407,9 +425,12 @@ const Map3D = () => {
                             }}></Input>
                         </InputContainer>
                         <Btn2 onClick={(e)=>{
-                            console.log("btn", e);
-                            subjList[select.subjCode].scale = e.target.parentElement.querySelector("input").value;
-                            changeScale()
+                            console.log("btn", e, subjList);
+                            subjList[select.subjCode]["scale"] = e.target.parentElement.querySelector("input").value;
+
+                            subjList.changed = [select.subjCode]
+                            setSubjState(subjList)
+                            console.log("btn finish", subjList)
                         }}>
                             Применить
                         </Btn2>
