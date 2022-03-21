@@ -214,7 +214,7 @@ const Map3D = () => {
                     }
 
 
-                setSubjState(subjList)
+                // setSubjState(subjList)
             }
 
             console.log(colorsMap, subjList)
