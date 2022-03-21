@@ -117,7 +117,7 @@ const Map3D = () => {
             else
                 subjList[index] = {"name": json[index]}
         }
-        setSubjState(subjList)
+        // setSubjState(subjList)
     })
 
 
@@ -214,7 +214,7 @@ const Map3D = () => {
                     }
 
 
-                setSubjState(subjList)
+                // setSubjState(subjList)
             }
 
             console.log(colorsMap, subjList)
@@ -429,7 +429,7 @@ const Map3D = () => {
                             subjList[select.subjCode]["scale"] = e.target.parentElement.querySelector("input").value;
 
                             subjList.changed = [select.subjCode]
-                            setSubjState(subjList)
+                            // setSubjState(subjList)
                             console.log("btn finish", subjList)
                         }}>
                             Применить
