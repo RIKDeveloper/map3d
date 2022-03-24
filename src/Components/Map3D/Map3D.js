@@ -175,7 +175,7 @@ const Map3D = () => {
         camera.position.set(1.1, 0, 0);
         light.position.set(3, 0, 0)
 
-        loaderGltf.load("models/map1.glb", (gltf) => {
+        loaderGltf.load("models/map.glb", (gltf) => {
             map = gltf.scene;
 
             for (const group of map.children) {
