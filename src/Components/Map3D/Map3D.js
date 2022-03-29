@@ -106,7 +106,7 @@ const Map3D = () => {
 
     spotLight1.target.position.setZ(2.3)
     spotLight1.target.updateMatrixWorld();
-    let timeUTC = 18
+    let timeUTC = new Date().getUTCHours()
     const colorsMap = [];
     let subjList = {changed: false};
 
@@ -342,7 +342,7 @@ const Map3D = () => {
 
         return () => mount.current.removeChild(renderer.domElement);
     }, [])
-    timeUTC = 22;
+    // timeUTC = 22;
 
     const onRenderScaleMap = () => {
         // if (map instanceof THREE.Group) {
